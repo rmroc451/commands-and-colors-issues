@@ -4,6 +4,44 @@ This document outlines the architecture, technology stack, and functional design
 
 ---
 
+## 0. Legal & Attribution: The Commands & Colors System
+
+*Please Note: I am taking absolutely no credit for the underlying game mechanics, rules, or the incredible system this project is based upon. This is entirely a fan project, and the true credit goes to the brilliant minds who originally created and published these games.*
+
+The **Commands & Colors** game system is a masterclass in wargame design, striking a perfect balance between accessibility, historical flavor, and deep tactical gameplay. All rights, concepts, and core mechanics belong solely to the original designer and the respective publishers.
+
+### The Designer
+
+The Commands & Colors system was invented and designed by [**Richard Borg**](https://en.wikipedia.org/wiki/Richard_Borg), an incredibly prolific game designer. His amazing work has spawned one of the most successful, adaptable, and universally beloved families of board games in the tabletop hobby. Borg's innovative system has successfully modeled warfare from the ancient world through to science fiction.
+
+### Support the Publishers (Buy the Games!)
+
+If you enjoy this system or find this project useful, I highly encourage you to purchase the physical board games. They feature fantastic tactile components, beautiful maps, and countless expansions that significantly deepen the experience. You can find and support the publishers directly at the links below:
+
+* [**GMT Games**](https://www.gmtgames.com/)
+  *GMT is the powerhouse behind the core historical titles in the series. They are the publishers of:*
+
+  * *Commands & Colors: Ancients (Focusing on the Classical world, Punic Wars, etc.)*
+
+  * *Commands & Colors: Napoleonics*
+
+  * *Commands & Colors: Medieval*
+
+  * *Commands & Colors: Samurai Battles*
+
+* [**Days of Wonder**](https://www.daysofwonder.com/)
+  *Publishers of the massively popular World War II classic, **Memoir '44**. This game features extensive expansions covering the Eastern Front, Pacific Theater, and the Mediterranean.*
+
+* [**Compass Games**](https://www.compassgames.com/)
+  *Publishers of **Commands & Colors: Tricorne - The American Revolution**, focusing on the linear tactics of the 18th century.*
+
+* [**Plastic Soldier Company (PSC Games)**](https://www.theplasticsoldiercompany.co.uk/)
+  *Publishers of **The Great War**, which successfully adapts the system to the trench warfare and emergence of tanks in World War I, and **Red Alert: Space Fleet Warfare**, which takes the system into science fiction combat.*
+
+* [**Avalon Hill / Hasbro**](https://avalonhill.hasbro.com/)
+  *Publishers of **Battle Cry** (The American Civil War). This is the landmark game that originally launched the entire Commands & Colors system back in 2000.*
+
+
 ## 1. Technology Stack
 
 | Component | Technology | Purpose |
