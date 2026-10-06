@@ -1,3 +1,10 @@
+<!-- BEGIN PUBLIC PLAYER GUIDES -->
+## Player Guides
+
+- [Commands & Colors User Guide](docs/userguide.md)
+- [AI Opponents Guide](docs/ai-guide.md)
+<!-- END PUBLIC PLAYER GUIDES -->
+
 # Commands & Colors Tactical Portal: Architecture Overview
 
 This document outlines the architecture, technology stack, and functional design of the Commands & Colors Tactical Portal. The system is engineered to be highly modular and service-oriented, ensuring that the core game logic is decoupled from the UI, making it easily extensible to any new commands and color variants.
