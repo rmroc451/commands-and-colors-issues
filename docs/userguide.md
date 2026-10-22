@@ -15,13 +15,13 @@ Commands & Colors: Tricorne brings scenario selection, command cards, hex-by-hex
   <figcaption><strong>The War Room</strong> — find a front to join, inspect a battle, or commission a new scenario.</figcaption>
 </figure>
 
-*Screenshots in this guide were captured with Playwright from a local demo session. Commander names, active games, scores, and available actions vary with live server data and account permissions.*
+*Screenshots in this guide were captured with Playwright in dark mode using a local demo fixture. Names and sample engagements are illustrative; live games, scores, and available actions vary with server data and account permissions.*
 
 ---
 
 ## 1. Muster in the War Room
 
-After signing in, **Active Fronts** is your operations board. Its engagement cards show the scenario, status, commanders, faction markers, and whether the battle is ranked or unranked. Use the controls to make a busy front easier to scan:
+After signing in, the **War Room** is your operations board. The **Your Battles First** area brings your engagements to the top, followed by other fronts in the selected theater. Engagement cards show the scenario, status, commanders, faction markers, and whether the battle is ranked or unranked. Use the controls to make a busy front easier to scan:
 
 - **Grid** gives each engagement its own card; **Split View** pairs a scrollable list with selected-game details.
 - Filter by status, including **Recruiting**, **Engaged**, **Awaiting Deployment**, and **Finished**.
@@ -52,7 +52,7 @@ Your setup choices include:
 | **Scenario** | Select an available Tricorne engagement. Examples in the scenario list include Bunker Hill, Long Island, Freeman’s Farm, Bemis Heights, Monmouth, and Cowpens. |
 | **Lobby name** | Give the engagement a name commanders can recognize in the War Room. |
 | **Your faction** | Choose British, Continental, or Random. |
-| **AI play modes (Work-In-Progress)** | Choose **Play against computer** for human-versus-AI, or **Watch two AI commanders** to observe both sides. See the [AI opponents guide](ai-guide.md) for skill levels and how the AI evaluates moves. |
+| **AI opponent** | For Tricorne, choose **Play against computer** to command one side or **Watch two AI commanders** to spectate both sides. Choose **AI Difficulty** before deployment. AI games are unranked. See the [AI opponents guide](ai-guide.md) for how the server AI chooses actions. |
 | **Ranked or unranked** | Ranked play is for eligible human multiplayer. AI battles are unranked; draws are available only in unranked games. |
 
 When the preview looks right, select **Deploy Scenario**. In multiplayer, other commanders can enlist in a recruiting engagement. Once both sides are present, players can enter the battlefield; other commanders can spectate.
@@ -114,7 +114,7 @@ For more context, map settings can show coordinates, map-point labels, terrain e
 
 ### Resolve combat together
 
-In a multiplayer engagement, the combat panel identifies the attacker and defender and shows the dice breakdown and relevant modifiers. The sides confirm their positions; the attacker rolls, and the interface presents the results before they are applied. When required, the flow includes a defender’s **Retire and Rally** choice, leader casualty checks, rally checks, and retreat handling. The result is applied after the required checks are complete.
+In an engagement, the combat panel identifies the attacker and defender and shows the dice breakdown and relevant modifiers. The game server resolves the roll and records the result; the interface presents it and guides the players through any required decisions, such as a defender’s **Retire and Rally** choice, leader casualty checks, rally checks, retreats, or follow-up actions. The board updates after the required steps are complete.
 
 This keeps the resolution sequence visible to both players rather than hiding the important decisions behind a single roll. Spectators can follow the engagement without taking the players’ actions.
 

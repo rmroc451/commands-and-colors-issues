@@ -1,91 +1,68 @@
-# AI Opponents: skill levels, tactics, and decision-making (Work-In-Progress)
+# AI Opponents: how Tricorne AI makes decisions
 
 [← Return to the Commands & Colors field guide](userguide.md)
 
-The Tricorne AI is an active battlefield opponent, not a random move generator. It chooses from actions that are legal in the current game state, estimates their tactical and objective value, and uses a bounded search to compare short action sequences. Difficulty changes how far and how broadly it searches—and how much variation it allows among near-equal choices.
+Commands & Colors: Tricorne offers two computer-controlled play modes: play against one computer opponent, or watch two AI commanders play each other. The AI runs on the game server. It selects from actions the server says are legal, compares their tactical value with a bounded search, and submits its choice through the same authoritative action flow used by players.
 
-## Choose how you want to play
+AI games are unranked. The AI uses the same Tricorne rules as human commanders; difficulty changes the size and depth of its search, not dice, unit capabilities, or combat outcomes.
 
-| Commission option | What happens |
+## Choose a mode
+
+| New Commission option | What happens |
 | --- | --- |
-| **Play against computer** | You command one faction; an AI commander occupies the opposing seat. Choose British, Continental, or Random as your faction. |
-| **Watch two AI commanders** | Both faction seats are controlled by AI commanders. The game opens for you to observe their engagement. |
+| **Play against computer** | Choose British, Continental, or Random. You command one side and the AI commands the opposing side. |
+| **Watch two AI commanders** | The server assigns an AI commander to each side. Open the game to spectate. |
 
-Both modes expose **AI Difficulty** and **Battle Pace**. In watch mode, the selected difficulty is assigned to both AI seats.
+Choose an **AI Difficulty** before deployment. In watch mode the selected difficulty applies to both AI commanders. AI settings are currently part of Tricorne's New Commission flow.
 
 <figure>
-  <img src="images/userguide-ai-opponent.png" alt="New Commission setup with Play against computer selected, Medium difficulty, and the Battle Pace control" width="100%">
-  <figcaption>Choose an opponent strength and action pace before deploying your AI battle.</figcaption>
+  <img src="images/userguide-ai-opponent.png" alt="Dark-mode New Commission dialog with Play against computer selected, Hard difficulty, and the Bunker Hill force and objective preview" width="100%">
+  <figcaption>Choose a human-versus-AI engagement and set the computer's difficulty before deployment.</figcaption>
 </figure>
 
 <figure>
-  <img src="images/userguide-ai-vs-ai.png" alt="New Commission setup with Watch two AI commanders selected and AI difficulty and pace controls visible" width="100%">
-  <figcaption>Watch mode puts an AI commander on each side of the map.</figcaption>
+  <img src="images/userguide-ai-vs-ai.png" alt="Dark-mode New Commission dialog with Watch two AI commanders selected and Brutal difficulty" width="100%">
+  <figcaption>Watch mode lets you follow an AI-controlled engagement from both sides.</figcaption>
 </figure>
 
-## Difficulty levels
+## What difficulty changes
 
-The four settings are **Easy**, **Medium**, **Hard**, and **Brutal**. They use the same game rules and action evaluator; the settings change search depth, how many candidate sequences are kept, how future steps are discounted, and how widely the AI may vary from the top score.
+The shared AI planner uses these search profiles:
 
-| Level | Search depth | Beam width | Future-score discount | Near-best variation |
+| Difficulty | Look-ahead depth | Beam width | Candidate limit per node | Future-score discount |
 | --- | ---: | ---: | ---: | ---: |
-| **Easy** | 1 step | 3 sequences | 0.80 | 0.45 |
-| **Medium** | 2 steps | 5 sequences | 0.82 | 0.18 |
-| **Hard** | 3 steps | 8 sequences | 0.86 | 0.06 |
-| **Brutal** | 4 steps | 12 sequences | 0.90 | 0 |
+| **Easy** | 1 step | 3 | 9 | 0.80 |
+| **Medium** | 2 steps | 5 | 15 | 0.82 |
+| **Hard** | 3 steps | 8 | 24 | 0.86 |
+| **Brutal** | 3 steps | 8 | 30 | 0.90 |
 
-**Search depth** is a short look-ahead through compatible actions in the current decision context—not a search through every future turn of the whole battle. **Beam width** is how many of the best partial sequences survive each search layer. A higher discount keeps more value on follow-up actions deeper in that sequence.
+**Depth** is the number of hypothetical actions the planner can look ahead. **Beam width** is how many of the strongest partial plans it keeps at each step. The **candidate limit** caps how many options it retains from each decision point, and the **discount** reduces the influence of later steps in a plan. The server also caps planning work at 2,048 expanded nodes and 5 seconds per decision; a search can stop earlier when it has enough information or reaches a limit.
 
-The variation value is a score window, not a chance of making an illegal move. The AI first finds the best sequence score, then—when variation is enabled—may choose among other candidates inside a tolerance based on that score. Easy therefore has a broader near-best choice window; Hard has a narrower one; Brutal selects the top-scoring candidate without score-noise selection. It does not receive extra dice or different unit statistics at higher difficulty.
+Brutal is not a four-step search: it has the same depth and beam width as Hard, but can keep more candidates and gives later actions more weight. Hard and Brutal are more thorough within the current decision; neither searches every possible line through the entire battle.
 
-**Battle Pace** is separate from difficulty. The slider controls the delay between AI actions (100–3,000 ms; the default is 800 ms). Move it lower for a faster game or higher to make each decision easier to follow.
+## How a decision is made
 
-## What happens when the AI takes a turn
+1. **Read the current server state.** The Tricorne adapter builds a versioned view for the AI's controller. It keeps the opponent's private information and hidden random state out of the planner's observation.
+2. **Collect legal candidates.** The adapter uses the server's current legal actions and variant rules to create typed choices. Candidate identifiers are opaque to the shared planner.
+3. **Describe each choice with features.** The adapter supplies numeric evidence for relevant factors such as objective progress, expected damage and losses, retaliation, flags, survival, card use and cost, position, follow-up value, tactical value, and risk.
+4. **Compare short plans.** The planner scores the candidates and uses cloned, hypothetical states to project selected order and movement actions. It keeps the strongest branches within the difficulty profile and work limits.
+5. **Submit one choice and evaluate again.** The adapter resolves the selected candidate back to a typed Tricorne intent. The server validates it against the current authoritative state and version, applies it through the normal game transaction, and plans again from the updated state.
 
-1. **Wait for control.** The AI acts when its faction is allowed to act and the game is in progress. Battle Pace limits how quickly it takes another action.
-2. **Build a decision view.** The AI reads the current phase, board and units, its own hand, order pool, victory totals, scenario objectives, and recent public game history.
-3. **Generate legal choices for that phase.** Depending on the phase, its options can include choosing a Move First card, playing a command or combat card, ordering units, moving, attacking, retiring artillery, retreating, ignoring flags, advancing, or ending the phase.
-4. **Score the choices.** Card, movement, combat, target, survival, and objective features contribute to an action score.
-5. **Compare short sequences.** A lightweight simulation updates a candidate board state as the search expands. The AI keeps the strongest sequences allowed by its difficulty settings, executes the first action in the chosen sequence, and evaluates again from the updated live game state.
+The AI's feature scores are estimates used to compare choices. For example, it can value progress toward an objective, weigh the expected damage and retaliation of an attack, and consider whether a combat card is worth spending. The feature values depend on the current board and legal action; the planner does not award a fixed bonus for every feature on every turn.
 
-The opponent uses the game’s board, movement, card, and combat services to form and execute actions. For attacks, its evaluator estimates expected hits, flags, kill probability, and retaliation from dice, range, movement, traits, and leader support. These are planning estimates; actual combat still resolves through the game’s normal dice and combat process.
+The search is deterministic for identical candidates and feature evidence: candidates are ordered by score with an opaque identifier used to break ties. It does not add random score noise to choose a weaker near-best option.
 
-## How it weighs options
+## The AI does not resolve its own combat
 
-The evaluator combines only the features relevant to a candidate action. These are the current score coefficients; a feature value is supplied by the action generator, so a weight is not a fixed bonus every action receives.
+The AI proposes a legal intent; it does not author dice, hits, flags, casualties, retreats, or a final combat result. The authoritative Tricorne rules and server-generated random results resolve those outcomes. Required decisions and follow-ups remain explicit game state, and the AI plans from the state the server accepts.
 
-| Feature | Score contribution | Why it matters |
-| --- | ---: | --- |
-| Expected damage | **+10 ×** | Rewards expected blocks removed from an enemy unit. |
-| Expected losses | **−8 ×** | Penalizes expected friendly losses. |
-| Expected retaliation | **−6 ×** | Accounts for likely counter-damage. |
-| Expected flags | **+2 ×** | Values pressure that may force an enemy retreat. |
-| Objective progress | **+9 ×** | Increases to **+10.35 ×** while behind on victory points. |
-| Banner value | **+12 ×** | Prioritizes scoring progress. |
-| Survival | **+5 ×** | Favors safe retreats, rallies, and staying power. |
-| Defensive value | **+3 ×** | Values useful protective positions or effects. |
-| Continuation, combo, card, trait, formation | **+4 ×**, **+4 ×**, **+3 ×**, **+4 ×**, **+4 ×** | Rewards useful follow-ups, card utility, special abilities, and formations. |
-| Tactical value / attack priority | **+2 ×** each | Adds context for a tactically useful action or target. |
-| Target priority | **+3 ×** | Helps choose a valuable defender. |
-| Risk | **−5 ×** | Penalizes dangerous options. |
-| Commitment | **−2 ×** normally; **−1 ×** while behind | Makes the AI more willing to commit when it needs to catch up. |
+This means the AI can estimate that an attack or position looks promising and still lose the exchange when the actual server-resolved result is poor. Higher difficulty improves the search within its limits; it does not guarantee a win or change the rules.
 
-The score also applies a small penalty to ending the phase, so the AI does not pass simply because passing is safe when a useful legal action remains.
+## Scope and limits
 
-### Cards and objectives
+- Search depth covers a short sequence in the current decision context. The AI replans after each accepted action instead of committing to a whole battle plan.
+- The planner is bounded and heuristic. It examines only a limited set of legal candidates and projected states; it is not exhaustive game-tree analysis and does not model every future opponent response.
+- The decision features and action meanings are supplied by the Tricorne adapter. The shared policy ranks opaque candidates without owning faction rules or interpreting card identities.
+- If a choice becomes stale before the server applies it, the server's current state and validation rules take precedence.
 
-For command cards, the AI estimates how many eligible units can actually use the card’s orders, which sections or unit types it can reach, and whether a matching scenario objective is active. It also considers useful card effects such as movement, volleys, melee bonuses, rally/reform, protection, reserve deployment, and forming a contiguous line. A card with no contextual benefit is sharply devalued; an order that can activate units on a relevant objective is more attractive.
-
-The board simulation values its own remaining blocks at **+0.15 each**, enemy blocks at **−0.10 each**, and the victory-point margin at **+4 per point**. Objective control is added separately: permanent and turn-start permanent objectives have a base weight of **4**, and other objective types a base weight of **2**; the resulting objective score is multiplied by **5**. Occupying objective hexes, controlling relevant sections, and matching a card to an objective can therefore influence both card selection and follow-up positioning.
-
-### Choosing a target
-
-The combat estimator considers the attacker’s dice after movement and trait adjustments, the defender’s remaining blocks, and expected retaliation. Target priority rises for damaged or unsupported formations and for valuable units such as leaders and artillery. Friendly support, terrain protection, ignored hits or flags, and defensive traits can reduce a target’s priority. This encourages the AI to look for vulnerable targets rather than simply selecting the nearest enemy.
-
-When the AI must choose **Retire and Rally** or stand, it compares estimated outcomes for both choices—including hits, ignored flags, rally dice, retreat distance, and possible follow-up advances or melee—and chooses the lower expected defensive cost.
-
-## What higher difficulty does—and does not—mean
-
-At higher settings, the AI examines more candidate steps and keeps a wider set of promising sequences for comparison. A lower-level setting is more likely to choose a good immediate action or a varied near-best option; a higher-level setting is more likely to preserve a setup that improves its later score. The levels do not change Tricorne rules, grant bonus dice, or guarantee a win.
-
-The search is deliberately bounded and heuristic. It evaluates the current phase’s legal-action pool and a simplified simulated board; it is not exhaustive full-game analysis and does not model every possible future opponent response. That makes the four settings useful for different table paces and challenge preferences without changing the battlefield rules.
+Use **Easy** for a lighter opponent, **Medium** for a balanced challenge, and **Hard** or **Brutal** when you want the planner to spend more of its bounded search on candidate comparison. These are play preferences, not promises of a particular result.
