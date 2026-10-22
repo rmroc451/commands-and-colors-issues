@@ -73,58 +73,55 @@ For a deeper explanation of Easy through Brutal, the AI’s search depth, and ho
 
 ## 3. Read the battlefield
 
-The battlefield combines the map, the turn’s command-card hand, faction scores, a phase indicator, and a running command log. The board uses illustrated hexes, terrain, faction-colored unit chits, and section markers to keep the action readable.
+The battlefield is organized around the map, with controls in the header, faction dashboards, phase ribbon, map tools, and bottom navigation. The header provides a return to the War Room, the battle title and scenario overview, notifications, the battle menu, and **What Can I Do?** The faction dashboards show each side’s banner progress and command/combat card counts. The phase ribbon shows **Card**, **Order**, **Move**, and **Combat**; the active phase and side are highlighted.
 
 <figure>
-  <img src="images/userguide-battlefield-desktop.png" alt="Tricorne battlefield showing hex terrain, unit chits, faction banners, command cards, phase tracker, map tools, and command log" width="100%">
-  <figcaption>The live table keeps the map, turn state, cards, and command history in view.</figcaption>
+  <img src="images/userguide-battlefield-desktop.jpg" alt="Dark-mode Tricorne battlefield with the scenario header, What Can I Do preview button, faction dashboards, phase ribbon, range tools, terrain inspector, and unit chits" width="100%">
+  <figcaption>The current desktop table puts the turn, faction status, map controls, terrain inspection, and battlefield on one screen.</figcaption>
 </figure>
+
+The **What Can I Do?** control opens a preview of actions the server considers available in the current game state. It helps explain the current options; it does not resolve a move or combat. The server still validates each action when you submit it. The exact choices depend on your role, the active phase, open decisions, and the selected unit.
+
+The battle header also opens the scenario overview. It shows the historical setup, victory goal, and scenario conditions before play.
+
+<figure>
+  <img src="images/userguide-battle-overview.jpg" alt="Dark-mode scenario overview for Freeman’s Farm showing its historical briefing, seven-banner victory goal, attrition condition, and Ready to Play control" width="100%">
+  <figcaption>Open the scenario overview from the battle header to revisit the briefing and victory conditions.</figcaption>
+</figure>
+
+These screenshots use a local Freeman’s Farm demo fixture. The available controls in a live battle depend on your role, phase, selected unit, and the server-provided options.
 
 ### Follow the turn
 
-The turn ribbon guides players through **Card**, **Order**, **Move**, and **Combat**; a **Move First** selection can appear when the scenario calls for it. The active faction and order pool are shown on the board. The mirrored faction dashboard tracks each side’s banners and card piles, while the victory tracker shows progress toward the scenario’s victory requirement.
+The turn ribbon guides players through **Card**, **Order**, **Move**, and **Combat**; **Move First** can appear when the scenario calls for it. The active side is shown beside the board. The faction dashboards track each side’s banner score and card piles, while the victory tracker shows progress toward the scenario’s requirement.
 
 ### Play cards, then command units
 
-Open or browse your hand to inspect available cards, then play a legal card for the current phase. Command cards shape which units or sections can be ordered; combat cards and scenario abilities can matter during an engagement. The card hand supports scrolling and card selection, and a contextual action menu makes play, discard, and retrieval available on touch devices where applicable.
+Open **Hand** to browse your permitted cards, then play a legal card for the current phase. Command cards shape which units or sections can be ordered; combat cards and scenario abilities can matter during an engagement. The hand supports scrolling and card selection. A contextual menu can make card actions available on touch devices where applicable. **Card Advisor** suggestions appear when supported by the current card and battle context.
 
-When card advice is available, the **Card Advisor** offers situational suggestions. The visible suggestion depends on the current card and battle context.
+### Inspect units, terrain, and actions
 
-### Maneuver across the map
+Select a unit or stack to inspect its classification, remaining blocks, movement and combat values, traits, and current status. Selecting a hex shows its terrain and coordinates; the terrain inspector can also show path cost, whether movement stops there, and whether it is impassable. When access is available, the inspector can link to **Review Terrain Chart**. As you plan a route, the board shows its movement path.
 
-Select a unit or stack to see what it can do. Unit inspection surfaces classification, remaining blocks, movement and combat values, traits, and status; hex inspection shows terrain, coordinates, and path cost. The board also draws a movement path when you plan a route.
+The **What Can I Do?** preview lists server-generated legal options for the current state. It is useful for checking available actions before you commit. Previewing an option does not order a unit, move it, or begin combat.
 
-#### Three range tools for planning
+#### Map tools
 
-On desktop layouts, the board toolbar offers **Move Range**, **Attack Range**, and **Fire Lanes**. These are tactical previews: they help you compare options before you commit a move or start combat.
+The desktop map toolbar currently offers **Move Range**, **Attack Range**, and **Clear**. **Move Range** previews destinations for the focused unit; **Attack Range** previews its available targets. **Clear** removes the current map preview. Separate **Hide Bars** and **Dice** controls are also available. These visual previews help with planning; the server remains the authority for action legality and results.
 
-- **Move Range** previews legal destinations for the focused unit, including movement cost, distance, and move type. Terrain and the unit’s current movement rules feed the preview.
-- **Attack Range** previews the focused unit’s available targets, with the calculated dice and distance shown at each target hex.
-- **Fire Lanes** compares a whole side’s firing opportunities. Choose **British** or **Continental** and the map marks opposing hexes that side can attack. If several units can reach the same target, separate firing-solution markers let you compare their dice and distance. Hover a marker to highlight its source unit and hex.
-- **Clear** removes the preview and returns the map to its normal view.
+**Fire Lanes** is conditional: it appears only when the current server preview supplies lane data. It is not available in every game state and is not shown in the current desktop screenshot.
 
-The preview uses the game’s current movement and attack calculations; seeing a target is not itself an order or an attack. Touch layouts use their own map tools and inspection/action controls instead of the desktop range-preview toolbar.
+On a tablet-sized layout, the map controls collapse behind **Map Tools** instead of showing the desktop toolbar. Unit and hex inspection and the bottom navigation remain available.
 
-<figure>
-  <img src="images/userguide-fire-lanes.png" alt="Fire Lanes preview with attack dice and distance markers across a Tricorne battlefield" width="100%">
-  <figcaption><strong>Fire Lanes</strong> makes it easy to compare which units can reach a target and with how many dice. Hover a firing solution to identify its source.</figcaption>
-</figure>
-
-For more context, map settings can show coordinates, map-point labels, terrain effects, unit identifiers, line-of-sight highlights, and faction outlines. Sound and dice animation are optional, and a terrain legend and action-highlighting key explain the map’s visual cues.
+For more context, map settings can show coordinates, map-point labels, terrain effects, unit identifiers, line-of-sight highlights, and faction outlines. A terrain legend and action-highlighting key explain the map’s visual cues. Sound and dice animation are optional.
 
 ### Resolve combat together
 
-In an engagement, the combat panel identifies the attacker and defender and shows the dice breakdown and relevant modifiers. The game server resolves the roll and records the result; the interface presents it and guides the players through any required decisions, such as a defender’s **Retire and Rally** choice, leader casualty checks, rally checks, retreats, or follow-up actions. The board updates after the required steps are complete.
+During an engagement, the combat panel identifies the attacker and defender and shows the dice breakdown and relevant modifiers. The server resolves the roll and records the result. The interface presents it and guides players through required decisions such as a defender’s **Retire and Rally** choice, leader casualty checks, retreats, or follow-up actions. The board updates after the required steps are complete. Spectators can follow the engagement without taking the players’ actions.
 
-This keeps the resolution sequence visible to both players rather than hiding the important decisions behind a single roll. Spectators can follow the engagement without taking the players’ actions.
+## 4. Use the battlefield panels and history
 
-## 4. Keep the battle’s history and conversation close
-
-### Command log and replay
-
-The floating **Command Log** records game events. Expand its filters to focus on combat, orders, card actions, or traits; search the log text; and expand grouped entries to inspect their details. Available timeline controls include **Replay**, **Undo**, **Redo**, and **Jump to latest**. The log can also be opened in a separate pop-out window.
-
-### Lobby and game chat
+The bottom navigation keeps **Hand**, **Chat**, **History**, and **Audio** available beside the map. Open **Hand** for your permitted cards, **Chat** for the game conversation, and **History** to review recorded events and any replay or battle-review controls available for that game. Recorded replays use saved results; they do not reroll combat. The **Classic** control switches to the alternate battlefield presentation.
 
 The War Room has lobby chat and separate channels for games you are part of. Unread badges help you spot new messages. In a chat, commanders can send messages, edit their own messages, review edit history, and pop the conversation out. Browser notifications can be enabled when supported. Game chat can stay beside the battlefield while you play.
 
@@ -209,6 +206,10 @@ This is a safeguard for competitive rating integrity, not an automatic gameplay 
 ## 7. Play comfortably on a smaller screen
 
 The game includes tablet mode, touch-oriented map tools, inspection panels, and a hand designed for swipe or scroll navigation. On touch layouts, select a unit or hex to open contextual actions such as inspect, edit, select a unit or stack, and attack when available. The **Install** control appears when the browser offers app installation.
+<figure>
+  <img src="images/userguide-battlefield-tablet.jpg" alt="Dark-mode tablet battlefield with compressed faction dashboards, phase ribbon, Map Tools button, hex board, and Hand, Chat, History, and Audio navigation" width="100%">
+  <figcaption>On tablet layouts, map controls collapse behind **Map Tools** while the main battlefield navigation stays in reach.</figcaption>
+</figure>
 
 For a clearer view on any screen, open **Map Settings** and enable only the map details you need. The tablet-mode control and **Hide bars** option provide additional space for the battlefield.
 
@@ -242,7 +243,7 @@ Issues in this tracker are public. Before submitting, check that your descriptio
 3. Compare the armies and objectives; open **Full Layout** to study the starting map.
 4. Choose a faction and game mode, then deploy.
 5. Follow the turn ribbon, play a card, order units, and use the map previews to plan movement and attacks.
-6. Review combat results, required checks, and the command log as the engagement unfolds.
+6. Review combat results, required decisions, and the History panel as the engagement unfolds.
 
 > **Availability note:** Actions depend on your role in the engagement. Players receive command controls for their side; spectators can observe. Scenario statistics and commander records grow as completed results are recorded.
 
