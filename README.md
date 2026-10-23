@@ -7,7 +7,7 @@
 
 # Commands & Colors Tactical Portal: Architecture Overview
 
-This document outlines the architecture, technology stack, and functional design of the Commands & Colors Tactical Portal. The system is engineered to be highly modular and service-oriented, ensuring that the core game logic is decoupled from the UI, making it easily extensible to any new commands and color variants.
+This document outlines the architecture, technology, and functional design of the Commands & Colors Tactical Portal. The current playable implementation is Tricorne: Angular presents the game, while the Python server owns authoritative game rules and state. Variant-specific rules stay behind their owning server adapters.
 
 ---
 
@@ -53,97 +53,84 @@ If you enjoy this system or find this project useful, I highly encourage you to 
 
 | Component | Technology | Purpose |
 | :--- | :--- | :--- |
-| **Framework** | Angular | Component structure, dependency injection, and UI management. |
-| **Language** | TypeScript | Provides strong typing for all game models and logic. |
-| **State Management** | NgRx | Centralized, predictable state management for complex, relational game data. |
-| **UI/Grid** | CSS Grid / HTML5 Canvas | Rendering the Hex Grid efficiently. |
-| **Interactivity** | Angular CDK Drag and Drop | Handling user interactions, such as card placement and movement. |
-| **Backend API** | FastAPI (Python) | High-performance API layer handling authentication, REST endpoints, and WebSocket connections. |
-| **Real-time State** | Redis | Distributed, persistent storage for game state, user presence, and Pub/Sub messaging for low-latency updates. |
-| **Deployment** | Docker & Docker Compose | Containerization for consistent, scalable deployment across development and production environments. |
+| **Framework** | Angular | Browser application structure, components, and UI. |
+| **Language** | TypeScript | Client-side presentation, requests, and state projections. |
+| **Game authority** | Python backend | Validates typed game actions and owns Tricorne rules, state transitions, and outcomes. |
+| **Live communication** | WebSockets and Redis-backed room transport | Carries authenticated game requests and server updates to connected clients. |
+| **Browser testing** | Playwright and Karma / ChromeHeadless | Covers browser workflows and Angular unit tests. |
+| **Deployment** | Docker Compose and Nginx | Runs the application and its supporting services in development and deployment environments. |
 
 ### Backend & Infrastructure Analysis
 
-The backend is designed for high concurrency and low latency, leveraging a microservice approach:
+The live game uses a server-authoritative client/server flow. Angular renders the board, cards, decisions, and accepted game state. It sends typed player intent with an action ID and the expected state version; it does not submit dice, hits, casualties, retreats, game results, or document patches as gameplay truth.
 
-*   **FastAPI & WebSockets:** FastAPI provides a fast, asynchronous foundation, crucial for handling numerous simultaneous WebSocket connections required for real-time game updates. This decouples the game logic from traditional HTTP request/response cycles.
-*   **Redis as the Source of Truth:** Redis is the core persistence layer. It is used not just for simple key-value storage (game state, user data) but also for Pub/Sub (`cnc_room_updates`, `cnc_global_updates`), which enables efficient, broadcast-based communication between the server and all connected clients. This pattern ensures that state changes are immediately propagated to all relevant players without requiring constant polling.
-*   **Data Synchronization (JSON Patch):** The system utilizes JSON Patch operations for state updates (`handle_patch_data`). This allows clients to send granular, small updates to the server, minimizing bandwidth usage and ensuring that the server can validate and apply changes safely against the current state version, which is critical for maintaining data integrity in a distributed environment.
-*   **Scalable Deployment (Docker Compose):** The infrastructure is containerized using Docker and orchestrated via `docker-compose.prod.yaml`. This ensures that the game server, Redis, and Nginx frontend run in a consistent, reproducible environment, simplifying scaling and deployment across various hosting platforms. The multi-stage Dockerfile optimizes the final production image size by separating build dependencies from runtime requirements.
-*   **Background Processing:** Asynchronous tasks (like `prune_orphaned_data_task` and `pending_offers_reaper_task`) are run as background tasks, preventing long-running maintenance operations from blocking the main WebSocket event loop, thus maintaining responsiveness for active players.
+The Python Tricorne implementation validates the controller, action, version, and any pending decision before it changes the game. It owns movement and phase legality, command and combat deck transactions, combat rolls, follow-up decisions, and victory outcomes. Accepted transactions retain version and audit evidence; stale or rejected actions do not alter the live game.
+
+WebSocket and Redis-backed room transport distribute committed updates through recipient-aware projections. Private hands, draw-pile order, and private random-number state are not exposed to other players. Redis supports live room transport and coordination; it is not described here as the sole authoritative game database.
+
+Docker Compose and Nginx provide the containerized development and deployment setup. The browser application and Python game server have separate responsibilities, with variant-specific rules kept in the Python variant boundary.
 
 ---
 
 ## 2. Core Data Models
 
-The foundation of the game state relies on strongly typed TypeScript interfaces:
+The live game document and its rule-bearing data are owned by the Python server and the selected game variant. Angular receives projections for display and submits typed requests; client-side interfaces are not the authoritative rules or game state.
 
-*   **`GameState`**: The central store tracking the current turn, active player, card hands, combat status, and victory conditions.
-*   **`Hex`**: Represents a single board tile, storing coordinates (`q, r, s`), terrain type, and elevation.
-*   **`Unit`**: Defines block stacks, tracking faction, unit type, current status, and leader attachment status.
-*   **`Card`**: The abstract structure for both **Command Cards** (tactics) and **Combat Cards**.
+The principal game concepts include:
+
+* **Game state**: Tracks the active player, phase, board, orders, decks, victory progress, and any serialized decision awaiting a controller.
+* **Hex**: Represents a board location, including coordinates and variant-provided terrain or elevation data.
+* **Unit**: Represents a formation and its current board state. Unit capabilities and faction presentation come from the selected variant's server-owned data.
+* **Cards**: Command and combat cards have server-owned identities, physical instances, availability, and effects. The client displays the permitted projection.
 
 ---
 
 ## 3. Game Flow: The State Machine
 
-The game loop is managed by a state machine within an Angular Service, enforcing a strict sequence of phases:
+The Python server owns the Tricorne phase machine and validates every live transition. The browser requests an action and renders the accepted state and any decision that remains open.
 
-1.  **Play Command Card Phase:** Player selects and plays a Command Card.
-2.  **Order Phase:** Player selects valid units/leaders based on card restrictions.
-3.  **Movement Phase:** Ordered units are moved, validated against terrain and unit movement limits.
-4.  **Combat Phase:** Units attack, resolving Line of Sight (LoS), dice calculations, damage, and leader casualty checks.
-5.  **End Turn Phase:** Drawing replacement cards and checking for victory conditions.
+1. **Play Command Card**: The controlling player selects a card from their permitted hand projection.
+2. **Order**: The server checks which units the active card allows the player to order.
+3. **Movement**: The server validates the requested path, movement capability, terrain, occupancy, and stacking.
+4. **Combat and follow-ups**: The server resolves combat and serializes any required retreat, rally, reaction, leader, battle-back, advance, or cavalry decision.
+5. **End phase and turn**: The server permits phase advancement only when required decisions are complete and selects the next active player.
+
+Pending decisions block unrelated actions that could bypass the required sequence. The browser can preview and animate actions, but only server-accepted transitions change the live game.
 
 ---
 
 ## 4. Logic Services (The Game Engine)
 
-Complex rules are encapsulated within dedicated services, ensuring clean separation of concerns.
+Tricorne rules are implemented behind the Python variant boundary. Shared client and server code may handle common transport or rendering, but it does not infer Tricorne faction rules from class names or raw faction identifiers.
 
-### A. `MovementService`
-*   **Functionality:** Handles pathfinding and movement validation.
-*   **Key Rules Implemented:**
-    *   **Terrain Costs:** Logic to halt movement or consume movement points upon entering specific terrain (Woods, Towns, Hills).
-    *   **Pass-through Rules:** Enforcing restrictions on movement through friendly vs. enemy units.
-    *   **Retreat Logic:** Separate validation logic to ensure units move towards their baseline for retreats.
+### A. Orders and Movement
 
-### B. `CombatService`
-This is the core resolution engine, utilizing pure functions for deterministic results.
-*   **Line of Sight (LoS):** Implements a hex-grid line-drawing algorithm to determine if ranged attacks are valid.
-*   **Dice Modifiers (Pre-Roll):** Calculates modifiers based on:
-    *   Unit Type and Range.
-    *   Movement penalties (e.g., -1 die if the unit moved and fired).
-    *   Terrain penalties (e.g., -1 die for firing into Woods/Towns).
-    *   Leader Bonuses (+1 die if an attached leader is present).
-    *   Active Card Modifiers (e.g., Bayonet Charge bonuses).
-*   **Dice Resolution (The Roll):** Rolls dice and resolves hits based on unit type and defensive modifiers.
-*   **Leader Casualty Checks:** Dedicated logic to roll multiple dice to determine if an attached leader is eliminated during combat.
+The server checks order scope and validates each movement step against the unit's chart capabilities, terrain, occupancy, stacking, and pass-through rules. It verifies the complete path and cumulative movement before accepting the move. Client-provided traits, paths, or movement limits cannot widen legal movement.
 
-### C. `MoraleService` (Tricorne Mechanic Focus)
-This service handles the crucial Morale, Retreats, and Rallying mechanics.
-*   **Flag Resolution:** Calculates the retreat distance for every un-ignored Flag based on unit type.
-*   **Flag Ignoring:** Logic to determine if a Flag is ignored (e.g., supported by adjacent friendly units, or if a Leader is attached).
-*   **Rally Check:** After a unit retreats, this mechanic rolls dice (based on remaining blocks and leader bonuses) to determine if the unit survives the rout or is removed from the board.
+### B. Combat Resolution
+
+The Tricorne server combat resolver owns dice generation, hit and flag resolution, casualties, board changes, pending follow-ups, and replay evidence. Each action is tied to an idempotency key and expected state version. Angular can show legal previews and animate the resulting evidence, but it cannot supply the roll or commit a calculated result.
+
+### C. Retreats, Rallying, and Leaders
+
+Retreat, rally, leader casualty, escape, and related follow-up choices are explicit server decisions with a controller and decision version. The server validates each response and resolves its consequences. The client renders the serialized decision rather than reconstructing the rule locally.
 
 ---
 
 ## 5. Command & Combat Card Architecture
 
-The card system uses the **Strategy Pattern** to define card behavior:
+Card identity and transactions belong to the variant-owned Python deck implementations. In Tricorne, sprite position and physical card instance identity are stable data; titles, image URLs, or reordered artwork are not used to infer card identity.
 
-*   **Section Cards:** Logic filters valid targets by checking hex coordinates against the current section's rules (e.g., Left/Center/Right mapping).
-*   **Tactic Cards:** These cards modify global `GameState` flags (e.g., setting a global melee modifier) for the duration of the turn.
-*   **Combat Cards:** These act as event listeners, triggering specific actions within the `CombatService` at defined points (e.g., `onBeforeDiceRolled`, `onAfterHitsCalculated`).
+* **Command Cards**: The server controls the playable manifest, hands, draw and discard transactions, order limits, and card effects. British and Continental players own command decks; French and Hessian forces are supporting members controlled by the appropriate deck-owning player.
+* **Combat Cards**: The server checks card eligibility and timing, owns reactions and card-scoped effects, and records accepted use with the combat or action that triggered it.
+* **Client display**: Angular shows only the authorized hand and public card information. It does not expose hidden hands or draw-pile order, consume cards, or author card outcomes.
 
 ---
 
-## 🚀 Extensibility for Any Commands & Colors Game
+## 🚀 Variant Boundaries and Extensibility
 
-The architecture is inherently designed for rapid adaptation:
+The current implementation is centered on Commands & Colors: Tricorne. Variant rules, faction identifiers, sprite identities, unit capabilities, decks, and scenario behavior belong to their owning variant definitions or adapters. Shared code treats variant identifiers as opaque values and obtains names and presentation metadata from the selected variant.
 
-1.  **Unit Customization:** New unit archetypes are added by simply defining new configuration objects that map directly to the existing statistical matrix (Move, Dice, Defense).
-2.  **Rule Modification:** New game rules (e.g., different retreat distances, unique morale checks) are isolated and implemented by modifying the specific logic within the dedicated **`MovementService`**, **`CombatService`**, or **`MoraleService`**.
-3.  **Card Definition:** New commands and tactics are added by creating new classes that implement the `Card` interface and define their specific effects, which interact with the global `GameState` or trigger service functions.
+Adding another variant requires an authoritative rules adapter and its own manifests, validation, and parity evidence, along with client projections and focused browser coverage. A unit configuration or card class alone does not make a new Commands & Colors variant playable.
 
-By keeping the state management centralized (NgRx) and the rule logic decentralized (Services), the system remains robust, scalable, and perfectly suited to evolve into any new Commands & Colors variant.
+The AI uses the same server-owned legal actions and action resolution as human players. Its planner compares bounded candidate plans and submits typed intent; the server remains responsible for validating and resolving each choice. See the [AI Opponents Guide](docs/ai-guide.md) for its difficulty profiles and decision process.
